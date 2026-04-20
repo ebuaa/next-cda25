@@ -7,6 +7,17 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm install
       - run: npm run build
+      - name: Scan des secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Audit des dépendances
+        run: npm audit --audit-level=high
+
+      - name: Run ESLint
+        run: npm run lint
+
       - uses: cypress-io/github-action@v6
         with:
           install: false
