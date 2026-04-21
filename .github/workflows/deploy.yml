@@ -21,20 +21,14 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Test SSH connection
-        run: ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "ls -la"
-
-      - name: Pull latest code
-        run: ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ~/next-cda25 && git pull origin main"
-
-      - name: Install dependencies
-        run: ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ~/next-cda25 && npm install"
-
-      - name: Build application
-        run: ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ~/next-cda25 && npm run build"
-
-      - name: Restart PM2
-        run: ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "pm2 restart next-app"
-
-      - name: Verify deployment
-        run: ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "pm2 list"
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+            set -e
+            cd ~/next-cda25
+            git pull origin main
+            npm install
+            npm run build
+            pm2 restart next-app
+            pm2 list
+          "
