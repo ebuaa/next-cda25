@@ -8,7 +8,11 @@
     "e2e:headless": "start-server-and-test dev http://localhost:3000 \"cypress run --e2e\"",
     "component": "cypress open --component",
     "component:headless": "cypress run --component",
-    "lint": "next lint --dir ."
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint ."
+  },
+  "eslintConfig": {
+    "extends": "next/core-web-vitals",
+    "ignorePatterns": ["cypress/**/*", "**/*.cy.*"]
   },
   "dependencies": {
     "next": "latest",
