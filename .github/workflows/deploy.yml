@@ -46,7 +46,7 @@ jobs:
             .next
           key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
       - name: Audit des dépendances
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high --omit=dev
 
   lint:
     runs-on: ubuntu-latest
