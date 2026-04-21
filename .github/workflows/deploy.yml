@@ -1,4 +1,4 @@
-name: Deploy to Azure Server
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,20 +7,102 @@ on:
       - master
 
 jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan des secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+    needs: security
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm install
+      - run: npm run build
+      - name: Sauvegarde du cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            node_modules
+            .next
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+
+  audit:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restauration du cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            node_modules
+            .next
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+      - name: Audit des dépendances
+        run: npm audit --audit-level=high
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restauration du cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            node_modules
+            .next
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+      - name: Run ESLint
+        run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    needs: [audit, lint]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restauration du cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            node_modules
+            .next
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+      - uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npm run start
+      - name: Upload Cypress videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-videos
+          path: cypress/videos
+      - name: Upload Cypress screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
   deploy:
     runs-on: ubuntu-latest
-
+    needs: test
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v4
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
       - name: Deploy
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
