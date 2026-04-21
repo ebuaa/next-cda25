@@ -60,6 +60,7 @@ jobs:
             node_modules
             .next
           key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+      - run: npm install
       - name: Run ESLint
         run: npm run lint
 
