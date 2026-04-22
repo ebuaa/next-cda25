@@ -1,13 +1,8 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({ baseDirectory: __dirname });
+import js from "@eslint/js";
 
 export default [
-  ...compat.extends("next/core-web-vitals"),
-  { ignores: ["cypress/**/*", "**/*.cy.*"] },
+  js.configs.recommended,
+  {
+    ignores: ["cypress/**/*", "**/*.cy.*", ".next/**/*", "node_modules/**/*"],
+  },
 ];
