@@ -1,5 +1,6 @@
 services:
   next:
+    image: ghcr.io/ebuaa/next-cda25/next:latest
     build:
       context: .
       target: next
